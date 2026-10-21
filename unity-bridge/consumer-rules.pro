@@ -1,0 +1,3 @@
+-keep class com.example.flxr.unity.** { *; }
+-keep class com.example.flxr.core.** { *; }
+-keep class com.microsoft.foundrylocal.** { *; }

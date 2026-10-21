@@ -1,0 +1,11 @@
+    packaging {
+        jniLibs {
+            pickFirsts += ['**/libc++_shared.so']
+            useLegacyPackaging = false
+        }
+    }
+
+    // Unity 2022.3 (AGP 7.4):
+    // packagingOptions {
+    //     pickFirst '**/libc++_shared.so'
+    // }

@@ -1,0 +1,13 @@
+.gradle/
+.kotlin/
+build/
+.idea/
+*.iml
+local.properties
+captures/
+out/
+
+libs/*.aar
+libs/*.sha256
+libs/*.txt
+libs/*.md

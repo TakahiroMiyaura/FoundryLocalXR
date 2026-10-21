@@ -1,0 +1,26 @@
+{
+  "package_id": "com.takabrz.flxrg2",
+  "edition": "202601",
+  "name": "FLXR G2 Local AI",
+  "version": "0.1.0",
+  "min_app_version": "2.2.5",
+  "min_sdk_version": "0.0.10",
+  "entrypoint": "index.html",
+  "permissions": [
+    {
+      "name": "g2-microphone",
+      "desc": "Streams the glasses microphone to the FLXR G2 Companion app on this phone for on-device speech recognition (Foundry Local)."
+    },
+    {
+      "name": "network",
+      "desc": "Talks to the FLXR G2 Companion app on this phone over loopback (127.0.0.1:18765) only. Nothing leaves the phone.",
+      "whitelist": [
+        "http://127.0.0.1:18765",
+        "ws://127.0.0.1:18765",
+        "http://127.0.0.1",
+        "ws://127.0.0.1"
+      ]
+    }
+  ],
+  "supported_languages": ["ja", "en"]
+}
