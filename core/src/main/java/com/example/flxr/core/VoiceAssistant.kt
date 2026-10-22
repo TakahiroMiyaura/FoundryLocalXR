@@ -12,6 +12,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -91,10 +92,22 @@ class VoiceAssistant(
     private var whisper: ChunkedWhisperTranscriber? = null
     private var chat: ChatSession? = null
     private var listenJob: Job? = null
+    private var prepareJob: Job? = null
     private val chatLock = Mutex()
 
-    /** Initializes the runtime and downloads and loads the speech and chat models. */
+    private companion object {
+        // The latest close() in this process. prepare() waits for it so that an old runtime
+        // is fully released before a new one is created.
+        @Volatile
+        var pendingClose: Job? = null
+    }
+
+    /**
+     * Initializes the runtime and downloads and loads the speech and chat models.
+     * Waits for any earlier [close] in this process to finish first.
+     */
     fun prepare(): Job = scope.launch(Dispatchers.IO) {
+        pendingClose?.join()
         try {
             setStatus("ランタイム初期化中")
             val eng = engine ?: FoundryEngine.create(context).also { engine = it }
@@ -132,7 +145,7 @@ class VoiceAssistant(
         } catch (e: Exception) {
             fail("初期化失敗", e)
         }
-    }
+    }.also { prepareJob = it }
 
     /**
      * Starts transcribing [pcm] until [stopListening] is called or the flow ends.
@@ -222,13 +235,21 @@ class VoiceAssistant(
         _state.update { it.copy(status = message, progress = null, error = "$message: ${e?.message ?: ""}") }
     }
 
-    /** Stops listening and unloads the models and runtime. */
-    fun close() {
+    /**
+     * Stops listening and unloads the models and runtime.
+     * Cancels a [prepare] in progress and waits for it to stop before releasing anything.
+     * Returns the job that completes when the release is done.
+     */
+    fun close(): Job {
         stopListening()
-        CoroutineScope(Dispatchers.IO).launch {
+        val preparing = prepareJob
+        val previous = pendingClose
+        return CoroutineScope(Dispatchers.IO).launch {
+            previous?.join()
+            preparing?.cancelAndJoin()
             runCatching { speechModel?.unload() }
             runCatching { chatModel?.unload() }
             runCatching { engine?.close() }
-        }
+        }.also { pendingClose = it }
     }
 }

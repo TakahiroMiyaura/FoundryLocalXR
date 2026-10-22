@@ -180,8 +180,9 @@ namespace Example.FoundryLocalXR
         /// <summary>Resamples Unity float samples to 16 kHz mono PCM16 and pushes them.</summary>
         public static void PushSamples(float[] samples, int count, int sampleRate, int channels = 1)
         {
-            if (samples == null || count <= 0) return;
-            int frames = count / Mathf.Max(1, channels);
+            if (samples == null || count <= 0 || sampleRate <= 0) return;
+            channels = Mathf.Max(1, channels);
+            int frames = Math.Min(count, samples.Length) / channels;
             int outFrames = (int)((long)frames * 16000 / sampleRate);
             if (outFrames <= 0) return;
             var pcm = new byte[outFrames * 2];
